@@ -1,0 +1,22 @@
+name: power-spectra
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.11
+  - xarray
+  - eofs
+  - numpy
+  - cartopy
+  - matplotlib
+  - netcdf4
+  - cftime
+  - dask
+  - bottleneck
+  - pandas
+  - scipy
+  - seaborn
+  # Jupyter bits
+  - jupyterlab
+  - notebook
+  - ipykernel
