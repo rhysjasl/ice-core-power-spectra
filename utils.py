@@ -5,8 +5,20 @@ import matplotlib.pyplot as plt
 from scipy.signal import welch
 from scipy.fft import fft, fftfreq
 
-def discrete_avg(old_x, old_y, interval, method='full'):
-    """Discretely average the data to downsample to a specified resolution"""
+def discrete_avg(old_x: np.ndarray, old_y: np.ndarray, interval: int, method: str='full'):
+    """
+    Discretely average the data to downsample to a specified resolution
+    
+    Args:
+        old_x (np.ndarray): Original time axis
+        old_y (np.ndarray): Original "proxy" data corresponding to old_x
+        interval (int): Desired sampling interval
+        method (string, optional): Method for treating the last point
+
+    Returns:
+        new_x (np.ndarray): New evenly-spaced time axis at desired sampling resolution
+        new_y (np.ndarray): New "proxy" data discretely averaged, corresponding to desired sampling resolution
+    """
     diff = np.mean(np.diff(old_x)) # if there is missing data, new x values will be slightly shifted
     wdw = interval / 2
     x0 = old_x[0] + wdw - (diff / 2)
@@ -18,6 +30,9 @@ def discrete_avg(old_x, old_y, interval, method='full'):
     elif method == 'cap':
         new_x = np.arange(x0, old_x[-1] - wdw + diff, interval)
         # this will only create the last point if there is enough data to cover the full interval
+    else:
+        raise ValueError("method must be either 'full' or 'cap'")
+    
     new_y = np.zeros_like(new_x)
 
     for i in range(len(new_x)):
@@ -30,8 +45,19 @@ def discrete_avg(old_x, old_y, interval, method='full'):
     return new_x, new_y
 
 # define boxcar moving average function
-def boxcar(data, window_size):
+def boxcar(data: np.ndarray, window_size: int):
+    """
+    Calculates the boxcar moving average of a 1D array.
+
+    Args:
+        data (np.ndarray): The input 1D array of numerical data.
+        window_size (int): The size of the moving window.
+    
+    Returns:
+        np.ndarray: The array containing the boxcar moving average.
+    """
     wdw = np.ones(window_size) / window_size
+
     return np.convolve(data, wdw, mode='valid')
 
 # define gaussian moving average function
@@ -75,10 +101,12 @@ def find_95_self(freqp: np.ndarray, psdp: np.ndarray, bandwidth: float=0.0001):
         freqp (np.ndarray): Frequencies of the moving average PSD.
         pspd (np.ndarray): Moving average PSD values.
         bandwidth (float): Bandwidth around each frequency to consider for averaging.
+    
     Returns:
         float: Frequency at which the moving average PSD reaches 95% of the raw PSD.
     """
     threshold = np.mean(psdp[freqp < 0.001]) * 0.95  # 95% of the mean PSD at low frequencies
+
     # cycle from highest to lowest frequency
     for f in freqp[::-1]:
         # Find indices within the bandwidth
@@ -87,14 +115,29 @@ def find_95_self(freqp: np.ndarray, psdp: np.ndarray, bandwidth: float=0.0001):
             avg_psd = np.mean(psdp[mask])
             if avg_psd >= threshold:
                 return f
+    
     return None  # Return None if no frequency meets the criteria
 
 # define resampling function
-def depth_to_age(depth_x, depth_y, resolution, old_depth, old_age):
-    """Resample data from depth to age domain at specified resolution"""
+def depth_to_age(depth_x: np.ndarray, depth_y: np.ndarray, resolution: float, old_depth: np.ndarray, old_age: np.ndarray):
+    """
+    Resample data from depth to age domain at specified resolution
+
+    Args:
+        depth_x (np.ndarray): Newly-created evenly-spaced depth axis corresponding to desired chronology
+        depth_y (np.ndarray): Original "proxy" data that has been interpolated to the new evenly-spaced depth axis
+        resolution (float): Desired resampling resolution to convert to time axis
+        old_depth (np.ndarray): Original ice core chronology depths
+        old_age (np.ndarray): Original ice core chronology ages corresponding to each depth
+
+    Returns:
+        new_age (np.ndarray): New evenly-spaced time axis for resampled synthetic data
+        new_y (np.ndarray): New "proxy" data that has been re-interpolated to correspond to the new time axis
+    """
     min_age = np.min(np.interp(depth_x, old_depth, old_age))
     max_age = np.max(np.interp(depth_x, old_depth, old_age))
     new_age = np.arange(min_age, max_age, resolution)
     new_depth = np.interp(new_age, old_age, old_depth)
     new_y = np.interp(new_depth, depth_x, depth_y)
+    
     return new_age, new_y
