@@ -4,7 +4,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.signal import welch
 from scipy.fft import fft, fftfreq
-from scipy import stats
 
 def discrete_avg(old_x: np.ndarray, old_y: np.ndarray, interval: int, method: str='full'):
     """
@@ -477,10 +476,8 @@ def red_noise(length: int, strength: float):
         raise ValueError("strength must be between 0 and 1")
 
     red_series = np.zeros(length)
-    # red_series[0] = stats.norm.rvs(size=1)
     red_series[0] = np.random.normal(0, 1)
     for i in range(1, length):
-        # red_series[i] = strength * red_series[i-1] + np.sqrt(1 - strength**2) * stats.norm.rvs(size=1)
         red_series[i] = strength * red_series[i-1] + np.sqrt(1 - strength**2) * np.random.normal(0, 1)
     return red_series
 
